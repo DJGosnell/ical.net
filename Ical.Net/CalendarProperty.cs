@@ -77,8 +77,8 @@ public class CalendarProperty : CalendarObject, ICalendarProperty
             return;
         }
 
-        // Deep-copy the parameters. Without this, a copied property loses e.g. VALUE, TZID or
-        // ENCODING, and serializes differently from its source.
+        // Parameters must be deep-copied: sharing the collection makes the copy serialize
+        // differently from its source, losing VALUE, TZID, ENCODING and the like.
         var parameters = new ParameterList();
         foreach (var parameter in p.Parameters)
         {

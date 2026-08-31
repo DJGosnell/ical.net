@@ -67,16 +67,15 @@ public class EnumSerializer : EncodableDataTypeSerializer
 
         try
         {
-            // Remove "-" characters while parsing Enum values.
+            // Hyphens are stripped before matching.
             return Enum.Parse(_mEnumType, value.Replace("-", ""), true);
         }
-        catch (ArgumentException)
+        catch (Exception ex) when (ex is ArgumentException or OverflowException)
         {
-            // The value is not a member of the enum - which happens with real-world .ics files.
-            // Fall back to the raw string rather than failing the whole parse.
-            //
-            // Only ArgumentException is caught: a bare catch here used to turn any failure,
-            // including a decoding error, into a silently mistyped property value.
+            // The value is not a member of the enum (ArgumentException) or does not fit its
+            // underlying type (OverflowException). Both are common in real-world .ics files, so
+            // fall back to the raw string. Decoding above is deliberately outside this, so a
+            // decoding failure propagates rather than yielding a silently mistyped value.
             return value;
         }
     }

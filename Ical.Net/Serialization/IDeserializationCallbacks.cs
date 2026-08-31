@@ -12,8 +12,8 @@ namespace Ical.Net.Serialization;
 /// object begins and ends.
 /// </summary>
 /// <remarks>
-/// This replaces the reflection-based scan for <see cref="OnDeserializingAttribute"/> and
-/// <see cref="OnDeserializedAttribute"/>, which is not compatible with trimming or NativeAOT.
+/// Dispatch is direct rather than via <see cref="OnDeserializingAttribute"/> and
+/// <see cref="OnDeserializedAttribute"/>, so that it survives trimming and NativeAOT.
 /// </remarks>
 internal interface IDeserializationCallbacks
 {

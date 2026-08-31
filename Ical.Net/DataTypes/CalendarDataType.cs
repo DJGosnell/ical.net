@@ -147,26 +147,22 @@ public abstract class CalendarDataType : ICalendarDataType, IDeserializationCall
     }
 
     /// <summary>
-    /// Creates a new, empty instance of the concrete runtime type - a "virtual constructor".
+    /// Creates a new, empty instance of the concrete runtime type.
     /// </summary>
     /// <remarks>
-    /// Every concrete type in this library overrides this with a direct <c>new</c>, which is what
-    /// lets <see cref="Copy{T}"/> avoid reflection and stay trimming- and NativeAOT-safe.
-    /// <para/>
-    /// The base implementation exists only so that introducing this member is not a breaking
-    /// change for subclasses outside this library. It falls back to <see cref="Activator"/> and
-    /// therefore needs the concrete type's parameterless constructor to survive trimming; under
-    /// NativeAOT a subclass relying on the fallback fails loudly with a
-    /// <see cref="MissingMethodException"/>. Override it.
+    /// Derived types must override this with a direct <c>new</c>, which is what keeps
+    /// <see cref="Copy{T}"/> free of reflection and therefore trimming- and NativeAOT-safe. The
+    /// base implementation falls back to <see cref="Activator"/>, which needs the concrete type's
+    /// parameterless constructor to survive trimming; under NativeAOT a type relying on it fails
+    /// with a <see cref="MissingMethodException"/>.
     /// </remarks>
     /// <returns>A new instance of the runtime type of this object.</returns>
     protected virtual CalendarDataType? CreateNew() => CreateNewByActivator();
 
     [UnconditionalSuppressMessage("Trimming", "IL2072",
-        Justification = "Fallback for subclasses outside this library that do not override CreateNew(). "
-            + "Every type in this library overrides it, so the trimmer is never asked to preserve a "
-            + "library type's constructor on account of this call. A subclass that relies on the "
-            + "fallback under trimming or NativeAOT fails loudly rather than silently.")]
+        Justification = "Fallback for derived types outside this library that do not override "
+            + "CreateNew(). Every type in this library overrides it, so the trimmer is never asked "
+            + "to preserve a library type's constructor on account of this call.")]
     private CalendarDataType? CreateNewByActivator()
         => Activator.CreateInstance(GetType(), true) as CalendarDataType;
 

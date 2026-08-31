@@ -17,13 +17,12 @@ public abstract class DataTypeSerializer : SerializerBase
     /// Creates a new, empty instance of <see cref="SerializerBase.TargetType"/>.
     /// </summary>
     /// <remarks>
-    /// Every serializer whose target is an <see cref="ICalendarDataType"/> overrides this with a
-    /// direct <c>new</c>, which is what lets <see cref="CreateAndAssociate"/> avoid reflection and
-    /// stay trimming- and NativeAOT-safe.
+    /// Serializers whose target is an <see cref="ICalendarDataType"/> must override this with a
+    /// direct <c>new</c>, which is what keeps <see cref="CreateAndAssociate"/> free of reflection
+    /// and therefore trimming- and NativeAOT-safe.
     /// <para/>
-    /// The default returns <see langword="null"/>, matching the previous behaviour for serializers
-    /// whose target is not an <see cref="ICalendarDataType"/> (<see cref="string"/>,
-    /// <see cref="int"/>, an enum, ...): those never produce an instance here.
+    /// The default returns <see langword="null"/>, for serializers whose target is not an
+    /// <see cref="ICalendarDataType"/> (<see cref="string"/>, <see cref="int"/>, an enum, ...).
     /// </remarks>
     protected virtual ICalendarDataType? CreateTargetInstance() => null;
 

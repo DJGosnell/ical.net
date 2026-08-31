@@ -47,9 +47,9 @@ public class ServiceProvider
     /// Registers <paramref name="impl"/> under exactly <typeparamref name="TService"/>.
     /// </summary>
     /// <remarks>
-    /// Prefer this over <see cref="SetService(object)"/>: the service type is stated explicitly
-    /// rather than discovered by reflecting over the implemented interfaces, which makes the
-    /// registration trimming- and NativeAOT-safe.
+    /// Prefer this over <see cref="SetService(object)"/>: stating the service type explicitly,
+    /// rather than reflecting over the implemented interfaces, keeps the registration trimming-
+    /// and NativeAOT-safe.
     /// </remarks>
     public virtual void SetService<TService>(TService impl) where TService : notnull
         => _mTypedServices[typeof(TService)] = impl;

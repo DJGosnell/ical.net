@@ -42,3 +42,13 @@ jobs:
       run: dotnet build --no-restore --configuration Release -p:nowarn=1591
     - name: Test
       run: dotnet test --no-build --configuration Release --verbosity normal
+
+    - name: AOT smoke test
+      run: |
+        set -euo pipefail
+        for tfm in net8.0 net10.0; do
+          echo "::group::AOT smoke test ($tfm)"
+          dotnet publish Ical.Net.AotTests --configuration Release --framework "$tfm" --runtime linux-x64 -warnaserror
+          "./Ical.Net.AotTests/bin/Release/$tfm/linux-x64/publish/Ical.Net.AotTests"
+          echo "::endgroup::"
+        done

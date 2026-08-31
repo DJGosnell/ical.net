@@ -16,11 +16,10 @@ namespace Ical.Net.Tests;
 /// Blanket coverage for <see cref="ICopyable.Copy{T}"/> across every concrete
 /// <see cref="ICopyable"/> type in the library.
 /// <para/>
-/// <see cref="CopyComponentTests"/> asserts field-level equality for a handful of components.
-/// These tests instead assert the invariants that every implementation must uphold - most
-/// importantly that a copy has the <em>exact same runtime type</em> as its source. That is the
-/// invariant a per-type virtual factory can silently break by returning the wrong type, and no
-/// field-equality test would notice.
+/// These assert the invariants every implementation must uphold - most importantly that a copy has
+/// the <em>exact same runtime type</em> as its source, which a per-type virtual factory can break
+/// by returning the wrong type without any field-equality test noticing.
+/// <see cref="CopyComponentTests"/> covers field-level equality for a handful of components.
 /// </summary>
 [TestFixture]
 public class CopyAllTypesTests
@@ -50,10 +49,9 @@ public class CopyAllTypesTests
     }
 
     /// <summary>
-    /// Every concrete type must override CreateNew() with a direct <c>new</c>. The base
-    /// implementation falls back to <see cref="Activator"/>, which is exactly what the AOT work
-    /// exists to avoid - a type that forgets the override still works under the JIT and only
-    /// fails once published with trimming enabled.
+    /// Every concrete type must override CreateNew() with a direct <c>new</c>. A type that misses
+    /// the override falls back to <see cref="Activator"/>, which still works under the JIT and
+    /// fails only once published with trimming enabled.
     /// </summary>
     [Test, TestCaseSource(nameof(ConcreteCopyableTypes))]
     public void CreateNewIsOverridden(Type type)
@@ -131,14 +129,14 @@ public class CopyAllTypesTests
         .Select(n => new TestCaseData(n).SetName($"SerializeCopySerializeIsStable({n})"));
 
     /// <summary>
-    /// Fixtures that do not survive a serialize -> copy -> serialize round trip today, because
+    /// Fixtures that do not survive a serialize -> copy -> serialize round trip, because
     /// <see cref="DataTypes.CalendarDataType.CopyFrom"/> points the copy's parameter proxy at the
     /// <em>source's</em> parameter collection rather than copying it. Attachment.CopyFrom and
     /// Attendee.CopyFrom then re-assign FormatType/Rsvp, and setting a parameter to a null or
     /// default value adds an empty parameter (FMTTYPE=, RSVP=FALSE) instead of removing it.
     /// <para/>
-    /// This is a pre-existing defect, unrelated to the AOT work. It is tracked rather than fixed
-    /// here because the fix belongs with the object-model refactor.
+    /// A known defect, tracked here rather than accepted as correct behaviour. Removing an entry
+    /// must go with a fix, never with a relaxed assertion.
     /// </summary>
     private static readonly HashSet<string> _knownCopyDivergences = new(StringComparer.Ordinal)
     {
@@ -160,7 +158,7 @@ public class CopyAllTypesTests
     {
         if (_knownCopyDivergences.Contains(resourceName))
         {
-            Assert.Ignore($"{resourceName}: known pre-existing copy divergence, see _knownCopyDivergences.");
+            Assert.Ignore($"{resourceName}: known copy divergence, see _knownCopyDivergences.");
             return;
         }
 

@@ -14,11 +14,11 @@ using NUnit.Framework;
 namespace Ical.Net.Tests;
 
 /// <summary>
-/// DataTypeSerializer.CreateAndAssociate() used to instantiate TargetType reflectively. It now
-/// delegates to a per-serializer CreateTargetInstance() override. A serializer that targets an
-/// ICalendarDataType but forgets the override silently deserializes to null - or, worse, inherits
-/// its base serializer's override and produces the wrong type (FreeBusyEntrySerializer derives
-/// from PeriodSerializer, AttendeeSerializer from StringSerializer).
+/// DataTypeSerializer.CreateAndAssociate() delegates to a per-serializer CreateTargetInstance()
+/// override. A serializer that targets an ICalendarDataType but misses the override silently
+/// deserializes to null - or, worse, inherits its base serializer's override and produces the
+/// wrong type (FreeBusyEntrySerializer derives from PeriodSerializer, AttendeeSerializer from
+/// StringSerializer).
 /// </summary>
 [TestFixture]
 public class DataTypeSerializerFactoryTests
