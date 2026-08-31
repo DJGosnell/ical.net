@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright ical.net project maintainers and contributors.
 // Licensed under the MIT license.
 //
@@ -73,6 +73,16 @@ public class CalendarProperty : CalendarObject, ICalendarProperty
         {
             return;
         }
+
+        // Deep-copy the parameters. Without this, a copied property loses e.g. VALUE, TZID or
+        // ENCODING, and serializes differently from its source.
+        var parameters = new ParameterList();
+        foreach (var parameter in p.Parameters)
+        {
+            parameters.Add(parameter.Copy<CalendarParameter>()!);
+        }
+        parameters.SetParent(this);
+        Parameters = parameters;
 
         SetValue(p.Values);
     }
