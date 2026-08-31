@@ -42,11 +42,11 @@ public class SerializationContext
     public SerializationContext()
     {
         // Add some services by default
-        SetService<ISerializerFactory>(new SerializerFactory());
-        SetService(new CalendarComponentFactory());
-        SetService(new DataTypeMapper());
-        SetService(new EncodingStack());
-        SetService<IEncodingProvider>(new EncodingProvider(this));
+        AddService<ISerializerFactory>(new SerializerFactory());
+        AddService(new CalendarComponentFactory());
+        AddService(new DataTypeMapper());
+        AddService(new EncodingStack());
+        AddService<IEncodingProvider>(new EncodingProvider(this));
     }
 
     public virtual void Push(object? item)
@@ -94,11 +94,12 @@ public class SerializationContext
     public virtual void SetService(string name, object obj) => _mServiceProvider.SetService(name, obj);
 
     /// <summary>
-    /// Registers <paramref name="impl"/> under exactly <typeparamref name="TService"/>.
+    /// Registers <paramref name="impl"/> under exactly <typeparamref name="TService"/>, replacing
+    /// any existing registration for that type.
     /// </summary>
-    public virtual void SetService<TService>(TService impl) where TService : notnull => _mServiceProvider.SetService(impl);
+    public virtual void AddService<TService>(TService impl) where TService : notnull => _mServiceProvider.AddService(impl);
 
-    [Obsolete("Use SetService<TService>(TService) instead. This overload reflects over the implemented interfaces and is not trimming- or AOT-safe.")]
+    [Obsolete("Use AddService<TService>(TService) instead. This overload reflects over the implemented interfaces and is not trimming- or AOT-safe.")]
     [RequiresUnreferencedCode("Reflects over the interfaces implemented by the argument's runtime type, which may be trimmed away.")]
     public virtual void SetService(object obj) => _mServiceProvider.SetService(obj);
 
