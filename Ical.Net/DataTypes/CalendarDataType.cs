@@ -6,6 +6,7 @@
 using System;
 using System.Runtime.Serialization;
 using Ical.Net.Proxies;
+using Ical.Net.Serialization;
 using NodaTime;
 
 namespace Ical.Net.DataTypes;
@@ -13,7 +14,7 @@ namespace Ical.Net.DataTypes;
 /// <summary>
 /// An abstract class from which all iCalendar data types inherit.
 /// </summary>
-public abstract class CalendarDataType : ICalendarDataType
+public abstract class CalendarDataType : ICalendarDataType, IDeserializationCallbacks
 {
     // Well be set with Initialize()
     private IParameterCollection _parameters = null!;
@@ -32,17 +33,9 @@ public abstract class CalendarDataType : ICalendarDataType
         _proxy = new ParameterCollectionProxy(_parameters);
     }
 
-    [OnDeserializing]
-    internal void DeserializingInternal(StreamingContext context)
-    {
-        OnDeserializing(context);
-    }
+    void IDeserializationCallbacks.OnDeserializing(StreamingContext context) => OnDeserializing(context);
 
-    [OnDeserialized]
-    internal void DeserializedInternal(StreamingContext context)
-    {
-        OnDeserialized(context);
-    }
+    void IDeserializationCallbacks.OnDeserialized(StreamingContext context) => OnDeserialized(context);
 
     protected virtual void OnDeserializing(StreamingContext context)
     {
