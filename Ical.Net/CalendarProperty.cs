@@ -82,7 +82,7 @@ public class CalendarProperty : CalendarObject, ICalendarProperty
         var parameters = new ParameterList();
         foreach (var parameter in p.Parameters)
         {
-            parameters.Add(parameter.Copy<CalendarParameter>()!);
+            parameters.Add(parameter.Copy<CalendarParameter>());
         }
         parameters.SetParent(this);
         Parameters = parameters;
