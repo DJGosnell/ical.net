@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Ical.Net;
 using Ical.Net.CalendarComponents;
+using Ical.Net.AotTests;
 using Ical.Net.Serialization;
 using NodaTime;
 
@@ -103,42 +104,45 @@ Console.WriteLine();
 Console.WriteLine($"## failures = {Smoke.Failures}");
 return Smoke.ExitCode;
 
-/// <summary>Assertions and the failure tally for the smoke test.</summary>
-internal static class Smoke
+namespace Ical.Net.AotTests
 {
-    private static int _failures;
-
-    /// <summary>Number of assertions that did not hold.</summary>
-    internal static int Failures => _failures;
-
-    /// <summary>0 when every assertion held, 1 otherwise.</summary>
-    internal static int ExitCode => _failures == 0 ? 0 : 1;
-
-    internal static void Check(string what, object? actual, object? expected)
+    /// <summary>Assertions and the failure tally for the smoke test.</summary>
+    internal static class Smoke
     {
-        var a = Format(actual);
-        var e = Format(expected);
-        Console.WriteLine($"{what} = {a}");
-        if (!string.Equals(a, e, StringComparison.Ordinal))
+        private static int _failures;
+
+        /// <summary>Number of assertions that did not hold.</summary>
+        internal static int Failures => _failures;
+
+        /// <summary>0 when every assertion held, 1 otherwise.</summary>
+        internal static int ExitCode => _failures == 0 ? 0 : 1;
+
+        internal static void Check(string what, object? actual, object? expected)
         {
-            _failures++;
-            Console.Error.WriteLine($"FAIL {what}: expected <{e}> but was <{a}>");
+            var a = Format(actual);
+            var e = Format(expected);
+            Console.WriteLine($"{what} = {a}");
+            if (!string.Equals(a, e, StringComparison.Ordinal))
+            {
+                _failures++;
+                Console.Error.WriteLine($"FAIL {what}: expected <{e}> but was <{a}>");
+            }
         }
+
+        /// <summary>A null here is a fixture bug, not a result, so fail loudly rather than dereference.</summary>
+        internal static Calendar Load(string ics)
+            => Calendar.Load(ics) ?? throw new InvalidOperationException("Calendar.Load returned null.");
+
+        internal static string Serialize(CalendarSerializer serializer, Calendar calendar)
+            => serializer.SerializeToString(calendar) ?? throw new InvalidOperationException("SerializeToString returned null.");
+
+        private static string Format(object? value) => value switch
+        {
+            null => "<null>",
+            string s => s,
+            bool b => b ? "true" : "false",
+            IEnumerable<string> items => string.Join(",", items),
+            _ => value.ToString() ?? "<null>",
+        };
     }
-
-    /// <summary>A null here is a fixture bug, not a result, so fail loudly rather than dereference.</summary>
-    internal static Calendar Load(string ics)
-        => Calendar.Load(ics) ?? throw new InvalidOperationException("Calendar.Load returned null.");
-
-    internal static string Serialize(CalendarSerializer serializer, Calendar calendar)
-        => serializer.SerializeToString(calendar) ?? throw new InvalidOperationException("SerializeToString returned null.");
-
-    private static string Format(object? value) => value switch
-    {
-        null => "<null>",
-        string s => s,
-        bool b => b ? "true" : "false",
-        IEnumerable<string> items => string.Join(",", items),
-        _ => value.ToString() ?? "<null>",
-    };
 }
