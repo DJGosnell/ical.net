@@ -1,9 +1,10 @@
-﻿//
+//
 // Copyright ical.net project maintainers and contributors.
 // Licensed under the MIT license.
 //
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text;
 
@@ -103,9 +104,25 @@ public abstract class SerializerBase : IStringSerializer
     public void SetService(string name, object obj)
         => SerializationContext.SetService(name, obj);
 
+    /// <summary>
+    /// Registers <paramref name="impl"/> under exactly <typeparamref name="TService"/>.
+    /// </summary>
+    public void SetService<TService>(TService impl) where TService : notnull
+        => SerializationContext.SetService(impl);
+
+    [Obsolete("Use SetService<TService>(TService) instead. This overload reflects over the implemented interfaces and is not trimming- or AOT-safe.")]
+    [RequiresUnreferencedCode("Reflects over the interfaces implemented by the argument's runtime type, which may be trimmed away.")]
     public void SetService(object obj)
         => SerializationContext.SetService(obj);
 
+    /// <summary>
+    /// Removes the service registered under exactly <typeparamref name="TService"/>.
+    /// </summary>
+    public void RemoveService<TService>()
+        => SerializationContext.RemoveService<TService>();
+
+    [Obsolete("Use RemoveService<TService>() instead. This overload reflects over the implemented interfaces and is not trimming- or AOT-safe.")]
+    [RequiresUnreferencedCode("Reflects over the interfaces implemented by the given type, which may be trimmed away.")]
     public void RemoveService(Type type)
         => SerializationContext.RemoveService(type);
 

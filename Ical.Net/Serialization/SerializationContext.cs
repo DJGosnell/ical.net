@@ -1,10 +1,11 @@
-﻿//
+//
 // Copyright ical.net project maintainers and contributors.
 // Licensed under the MIT license.
 //
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Ical.Net.Serialization;
 
@@ -41,11 +42,11 @@ public class SerializationContext
     public SerializationContext()
     {
         // Add some services by default
-        SetService(new SerializerFactory());
+        SetService<ISerializerFactory>(new SerializerFactory());
         SetService(new CalendarComponentFactory());
         SetService(new DataTypeMapper());
         SetService(new EncodingStack());
-        SetService(new EncodingProvider(this));
+        SetService<IEncodingProvider>(new EncodingProvider(this));
     }
 
     public virtual void Push(object? item)
@@ -92,8 +93,22 @@ public class SerializationContext
 
     public virtual void SetService(string name, object obj) => _mServiceProvider.SetService(name, obj);
 
+    /// <summary>
+    /// Registers <paramref name="impl"/> under exactly <typeparamref name="TService"/>.
+    /// </summary>
+    public virtual void SetService<TService>(TService impl) where TService : notnull => _mServiceProvider.SetService(impl);
+
+    [Obsolete("Use SetService<TService>(TService) instead. This overload reflects over the implemented interfaces and is not trimming- or AOT-safe.")]
+    [RequiresUnreferencedCode("Reflects over the interfaces implemented by the argument's runtime type, which may be trimmed away.")]
     public virtual void SetService(object obj) => _mServiceProvider.SetService(obj);
 
+    /// <summary>
+    /// Removes the service registered under exactly <typeparamref name="TService"/>.
+    /// </summary>
+    public virtual void RemoveService<TService>() => _mServiceProvider.RemoveService<TService>();
+
+    [Obsolete("Use RemoveService<TService>() instead. This overload reflects over the implemented interfaces and is not trimming- or AOT-safe.")]
+    [RequiresUnreferencedCode("Reflects over the interfaces implemented by the given type, which may be trimmed away.")]
     public virtual void RemoveService(Type type) => _mServiceProvider.RemoveService(type);
 
     public virtual void RemoveService(string name) => _mServiceProvider.RemoveService(name);

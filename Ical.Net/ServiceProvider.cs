@@ -1,10 +1,11 @@
-﻿//
+//
 // Copyright ical.net project maintainers and contributors.
 // Licensed under the MIT license.
 //
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Ical.Net;
@@ -42,6 +43,22 @@ public class ServiceProvider
         }
     }
 
+    /// <summary>
+    /// Registers <paramref name="impl"/> under exactly <typeparamref name="TService"/>.
+    /// </summary>
+    /// <remarks>
+    /// Prefer this over <see cref="SetService(object)"/>: the service type is stated explicitly
+    /// rather than discovered by reflecting over the implemented interfaces, which makes the
+    /// registration trimming- and NativeAOT-safe.
+    /// </remarks>
+    public virtual void SetService<TService>(TService impl) where TService : notnull
+        => _mTypedServices[typeof(TService)] = impl;
+
+    /// <summary>
+    /// Registers <paramref name="obj"/> under its concrete type and under every interface it implements.
+    /// </summary>
+    [Obsolete("Use SetService<TService>(TService) instead. This overload reflects over the implemented interfaces and is not trimming- or AOT-safe.")]
+    [RequiresUnreferencedCode("Reflects over the interfaces implemented by the argument's runtime type, which may be trimmed away.")]
     public virtual void SetService(object obj)
     {
         var type = obj.GetType();
@@ -54,6 +71,11 @@ public class ServiceProvider
         }
     }
 
+    /// <summary>
+    /// Removes the service registered under <paramref name="type"/> and under every interface it implements.
+    /// </summary>
+    [Obsolete("Use RemoveService<TService>() instead. This overload reflects over the implemented interfaces and is not trimming- or AOT-safe.")]
+    [RequiresUnreferencedCode("Reflects over the interfaces implemented by the given type, which may be trimmed away.")]
     public virtual void RemoveService(Type type)
     {
         if (_mTypedServices.ContainsKey(type))
@@ -66,6 +88,11 @@ public class ServiceProvider
             _mTypedServices.Remove(interfaceType);
         }
     }
+
+    /// <summary>
+    /// Removes the service registered under exactly <typeparamref name="TService"/>.
+    /// </summary>
+    public virtual void RemoveService<TService>() => _mTypedServices.Remove(typeof(TService));
 
     public virtual void RemoveService(string name)
     {
