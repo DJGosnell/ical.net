@@ -1,9 +1,8 @@
-﻿//
+//
 // Copyright ical.net project maintainers and contributors.
 // Licensed under the MIT license.
 //
 
-using System;
 using Ical.Net.DataTypes;
 
 namespace Ical.Net.Serialization.DataTypes;
@@ -14,10 +13,24 @@ public abstract class DataTypeSerializer : SerializerBase
 
     protected DataTypeSerializer(SerializationContext ctx) : base(ctx) { }
 
+    /// <summary>
+    /// Creates a new, empty instance of <see cref="SerializerBase.TargetType"/>.
+    /// </summary>
+    /// <remarks>
+    /// Every serializer whose target is an <see cref="ICalendarDataType"/> overrides this with a
+    /// direct <c>new</c>, which is what lets <see cref="CreateAndAssociate"/> avoid reflection and
+    /// stay trimming- and NativeAOT-safe.
+    /// <para/>
+    /// The default returns <see langword="null"/>, matching the previous behaviour for serializers
+    /// whose target is not an <see cref="ICalendarDataType"/> (<see cref="string"/>,
+    /// <see cref="int"/>, an enum, ...): those never produce an instance here.
+    /// </remarks>
+    protected virtual ICalendarDataType? CreateTargetInstance() => null;
+
     protected virtual ICalendarDataType? CreateAndAssociate()
     {
         // Create an instance of the object
-        if (Activator.CreateInstance(TargetType, true) is not ICalendarDataType dt)
+        if (CreateTargetInstance() is not { } dt)
         {
             return null;
         }
