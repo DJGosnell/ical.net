@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <LangVersion>latest</LangVersion>
+        <IsPackable>false</IsPackable>
+        <!-- Not a VSTest project: VSTest and NUnit3TestAdapter are not AOT-compatible, so this is a
+             plain Exe with hand-rolled assertions. Keeps solution-wide `dotnet test` from probing it. -->
+        <IsTestProject>false</IsTestProject>
+        <RootNamespace>Ical.Net.AotTests</RootNamespace>
+        <PublishAot>true</PublishAot>
+        <!-- Deliberately aggressive. There is no TrimmerRootAssembly and no ILLink descriptor:
+             needing either is exactly what this gate exists to catch. -->
+        <TrimMode>full</TrimMode>
+        <InvariantGlobalization>true</InvariantGlobalization>
+    </PropertyGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Ical.Net\Ical.Net.csproj" />
+    </ItemGroup>
+</Project>

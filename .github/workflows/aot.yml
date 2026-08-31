@@ -1,0 +1,84 @@
+name: NativeAOT
+
+on:
+  pull_request:
+    branches:
+      - main
+      - 'version/6.0'
+    paths-ignore:
+      - '**/*.md'
+  push:
+    branches:
+      - main
+      - 'version/6.0'
+      - 'pr/**/*'
+      - 'wip/**/*'
+    paths-ignore:
+      - '**/*.md'
+
+# An AOT build that compiles clean and exits 0 proves nothing - that is exactly the state this
+# library was in while it emitted a duplicated calendar event. This job publishes a native binary,
+# runs it, and diffs its transcript against the same fixtures under the JIT. Any divergence fails.
+jobs:
+  aot:
+    name: AOT smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v7
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v6
+      with:
+        dotnet-version: 10.0.x
+
+    # ILC needs a native toolchain and zlib. Both are present on GitHub's ubuntu runners, but
+    # clang is not always the default cc.
+    - name: Install native toolchain (Linux)
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && sudo apt-get install -y clang zlib1g-dev
+
+    # The library itself must stay analyzer-clean. IsAotCompatible is set in the csproj, so this
+    # fails the build on any newly introduced reflection.
+    - name: Verify the library is trim-analyzer clean
+      run: dotnet build Ical.Net/Ical.Net.csproj -c Release -warnaserror
+
+    - name: Run the fixtures under the JIT
+      shell: bash
+      run: |
+        dotnet build Ical.Net.AotTests/Ical.Net.AotTests.csproj -c Release
+        dotnet run --project Ical.Net.AotTests/Ical.Net.AotTests.csproj -c Release --no-build > jit.txt
+
+    # Trimming inputs are not picked up incrementally. Always publish from clean, or you will
+    # publish a stale binary and draw the wrong conclusion.
+    - name: Publish and run the native binary
+      shell: bash
+      run: |
+        rm -rf Ical.Net.AotTests/obj Ical.Net.AotTests/bin
+        dotnet publish Ical.Net.AotTests/Ical.Net.AotTests.csproj -c Release -warnaserror
+        find Ical.Net.AotTests/bin/Release -type f -name 'Ical.Net.AotTests' -o -name 'Ical.Net.AotTests.exe' | head -1 > binary.txt
+        "$(cat binary.txt)" > aot.txt
+
+    - name: Diff the JIT and AOT transcripts
+      shell: bash
+      run: |
+        if ! diff -u jit.txt aot.txt; then
+          echo "::error::The NativeAOT transcript diverges from the JIT transcript."
+          exit 1
+        fi
+        echo "JIT and AOT transcripts are identical."
+
+    - name: Upload transcripts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: aot-transcripts-${{ matrix.os }}
+        path: |
+          jit.txt
+          aot.txt
+        if-no-files-found: ignore
