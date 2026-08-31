@@ -31,6 +31,9 @@ namespace Ical.Net;
 [DebuggerDisplay("{Name}:{Value}")]
 public class CalendarProperty : CalendarObject, ICalendarProperty
 {
+    /// <inheritdoc/>
+    protected override CalendarObjectBase CreateNew() => new CalendarProperty();
+
     private readonly List<object?> _values = new List<object?>();
 
     /// <summary>

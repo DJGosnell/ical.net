@@ -22,6 +22,9 @@ namespace Ical.Net;
 
 public class Calendar : CalendarComponent, IGetOccurrencesTyped, IGetFreeBusy, IMergeable
 {
+    /// <inheritdoc/>
+    protected override CalendarObjectBase CreateNew() => new Calendar();
+
     public static Calendar? Load(string iCalendarString)
         => CalendarCollection.Load(new StringReader(iCalendarString)).SingleOrDefault();
 

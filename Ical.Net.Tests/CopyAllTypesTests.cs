@@ -49,6 +49,24 @@ public class CopyAllTypesTests
             + "and make sure any new type provides its own copy implementation.");
     }
 
+    /// <summary>
+    /// Every concrete type must override CreateNew() with a direct <c>new</c>. The base
+    /// implementation falls back to <see cref="Activator"/>, which is exactly what the AOT work
+    /// exists to avoid - a type that forgets the override still works under the JIT and only
+    /// fails once published with trimming enabled.
+    /// </summary>
+    [Test, TestCaseSource(nameof(ConcreteCopyableTypes))]
+    public void CreateNewIsOverridden(Type type)
+    {
+        var createNew = type.GetMethod("CreateNew", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        Assert.That(createNew, Is.Not.Null, $"{type.FullName} has no CreateNew() method.");
+        Assert.That(createNew!.DeclaringType, Is.EqualTo(type),
+            $"{type.FullName} does not override CreateNew() and would fall back to Activator.CreateInstance, "
+            + "which is not trimming- or NativeAOT-safe. Add: protected override ... CreateNew() => new "
+            + type.Name + "();");
+    }
+
     [Test, TestCaseSource(nameof(ConcreteCopyableTypes))]
     public void CopyReturnsSameRuntimeType(Type type)
     {

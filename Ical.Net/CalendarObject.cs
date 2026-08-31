@@ -16,6 +16,9 @@ namespace Ical.Net;
 /// </summary>
 public class CalendarObject : CalendarObjectBase, ICalendarObject, IDeserializationCallbacks
 {
+    /// <inheritdoc/>
+    protected override CalendarObjectBase CreateNew() => new CalendarObject();
+
     // Are initialized in the constructor
     private ICalendarObjectList<ICalendarObject> _children = null!;
 
