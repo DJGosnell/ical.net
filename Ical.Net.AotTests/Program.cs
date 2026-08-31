@@ -20,6 +20,7 @@ Harness.Run("vtimezone-round-trip", Fixtures.VTimeZoneRoundTrip);
 Harness.Run("serialization-stability", Fixtures.SerializationStability);
 Harness.Run("copy-every-type", Fixtures.CopyEveryType);
 Harness.Run("copy-is-deep", Fixtures.CopyIsDeep);
+Harness.Run("enum-parsing", Fixtures.EnumParsing);
 Harness.Run("service-resolution", Fixtures.ServiceResolution);
 
 return Harness.Complete();

@@ -6,10 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using Ical.Net.CalendarComponents;
 using Ical.Net.DataTypes;
 using Ical.Net.Serialization;
+using Ical.Net.Serialization.DataTypes;
 using NodaTime;
 
 namespace Ical.Net.AotTests;
@@ -387,6 +389,65 @@ internal static class Fixtures
         Harness.Check("deep.copy.alarm", copy.Alarms[0]!.Description, "Copy alarm");
         Harness.Check("deep.copy.geo", $"{copy.GeographicLocation?.Latitude}", "48.210033");
         Harness.Check("deep.copy.resources", copy.Resources.OrderBy(r => r, StringComparer.Ordinal), new[] { "A", "B" });
+    }
+
+    /// <summary>
+    /// The four enum-metadata call sites in the library. None of them is annotated
+    /// [RequiresUnreferencedCode] or [RequiresDynamicCode] by the BCL, and none of them warns - but
+    /// "the analyzer is quiet" is exactly the evidence that proved worthless last time, so exercise
+    /// them for real.
+    /// <para/>
+    /// They are safe because the trimmer never strips fields from an enum type: enum members are
+    /// static literal fields, and an enum that survives at all survives whole. The one overload
+    /// that genuinely is not AOT-safe, Enum.GetValues(Type), carries [RequiresDynamicCode] because
+    /// it has to build an array of the enum type at runtime - the library does not use it.
+    /// </summary>
+    internal static void EnumParsing()
+    {
+        // 1. EnumSerializer.Deserialize -> Enum.Parse(Type, string, bool).
+        var serializer = new EnumSerializer(typeof(FrequencyType));
+
+        Harness.Check("enum.parse.exact", serializer.Deserialize(new StringReader("Weekly")), FrequencyType.Weekly);
+        Harness.Check("enum.parse.ignoreCase", serializer.Deserialize(new StringReader("MONTHLY")), FrequencyType.Monthly);
+        Harness.Check("enum.parse.hyphenStripped", serializer.Deserialize(new StringReader("SECOND-LY")), FrequencyType.Secondly);
+
+        // The narrowed catch: an unknown value falls back to the raw string rather than throwing.
+        Harness.Check("enum.parse.unknown", serializer.Deserialize(new StringReader("Fortnightly")), "Fortnightly");
+
+        var range = new EnumSerializer(typeof(RecurrenceRange));
+        Harness.Check("enum.parse.otherEnum", range.Deserialize(new StringReader("ThisAndFuture")), RecurrenceRange.ThisAndFuture);
+
+        // 2. EnumSerializer.SerializeToString on a boxed enum. This is the path that is actually
+        //    reachable through the public API, via PropertySerializer.Build(value.GetType()).
+        Harness.Check("enum.serialize", serializer.SerializeToString(FrequencyType.Yearly), "Yearly");
+
+        // 3. RecurrenceRule.Frequency setter -> Enum.IsDefined(Type, object).
+        var rule = new RecurrenceRule { Frequency = FrequencyType.Daily };
+        Harness.Check("enum.isDefined.accepts", rule.Frequency, FrequencyType.Daily);
+
+        try
+        {
+            rule.Frequency = (FrequencyType) 999;
+            Harness.Fail("enum.isDefined.rejects", "expected ArgumentOutOfRangeException, none thrown");
+            Harness.Report("enum.isDefined.rejects", "<no exception>");
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            Harness.Report("enum.isDefined.rejects", "ArgumentOutOfRangeException");
+        }
+
+        // 4. RecurrenceRuleSerializer -> Enum.TryParse<FrequencyType>. Covered implicitly by every
+        //    RRULE fixture above; assert the parsed value directly as well.
+        var calendar = Load(Wrap(
+            "BEGIN:VEVENT",
+            "UID:enum-1",
+            "DTSTART;TZID=" + Tz + ":20260105T090000",
+            "DTEND;TZID=" + Tz + ":20260105T100000",
+            "RRULE:FREQ=WEEKLY;COUNT=2",
+            "SUMMARY:Enum parsing",
+            "END:VEVENT"));
+
+        Harness.Check("enum.tryParse.frequency", calendar.Events.First().RecurrenceRule?.Frequency, FrequencyType.Weekly);
     }
 
     /// <summary>
