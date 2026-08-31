@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright ical.net project maintainers and contributors.
 // Licensed under the MIT license.
 //
@@ -50,27 +50,34 @@ public class EnumSerializer : EncodableDataTypeSerializer
     {
         var value = tr.ReadToEnd();
 
+        if (SerializationContext.Peek() is ICalendarObject obj)
+        {
+            // Decode the value, if necessary!
+            var dt = new EncodableDataType
+            {
+                AssociatedObject = obj
+            };
+            value = Decode(dt, value);
+        }
+
+        if (value == null)
+        {
+            return null;
+        }
+
         try
         {
-            if (SerializationContext.Peek() is ICalendarObject obj)
-            {
-                // Decode the value, if necessary!
-                var dt = new EncodableDataType
-                {
-                    AssociatedObject = obj
-                };
-                value = Decode(dt, value);
-            }
-
             // Remove "-" characters while parsing Enum values.
-            if (value != null)
-                return Enum.Parse(_mEnumType, value.Replace("-", ""), true);
+            return Enum.Parse(_mEnumType, value.Replace("-", ""), true);
         }
-        catch
+        catch (ArgumentException)
         {
-            // Return null instead of throwing an exception
+            // The value is not a member of the enum - which happens with real-world .ics files.
+            // Fall back to the raw string rather than failing the whole parse.
+            //
+            // Only ArgumentException is caught: a bare catch here used to turn any failure,
+            // including a decoding error, into a silently mistyped property value.
+            return value;
         }
-
-        return value;
     }
 }
